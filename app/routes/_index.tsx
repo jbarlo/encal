@@ -22,6 +22,7 @@ const Hour: FC<HourProps> = ({ hour, hourHeight }: HourProps) => {
         height: hourHeight,
         borderTop: "solid #666 1px",
         boxSizing: "border-box",
+        backgroundColor: hour >= 22 || hour < 8 ? "#0004" : "#0000",
       }}
     >
       {moment().startOf("day").add(hour, "hours").format("HH:mm")}
