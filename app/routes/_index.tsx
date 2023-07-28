@@ -15,6 +15,7 @@ import type { CSSProperties, FC } from "react";
 import { useState } from "react";
 import moment from "moment";
 import type { Moment } from "moment";
+import { ClientOnly } from "remix-utils";
 
 export const meta: V2_MetaFunction = () => {
   return [
@@ -169,17 +170,21 @@ export default function Index() {
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
-      {map(range(numWeeks), (week) => {
-        return (
-          <Week
-            key={week}
-            weekStartDate={moment().startOf("week").add(week, "weeks")}
-            events={flattenedEvents}
-            focused={week === selectedWeek}
-            onClick={() => setSelectedWeek(week)}
-          />
-        );
-      })}
+      <ClientOnly>
+        {() =>
+          map(range(numWeeks), (week) => {
+            return (
+              <Week
+                key={week}
+                weekStartDate={moment().startOf("week").add(week, "weeks")}
+                events={flattenedEvents}
+                focused={week === selectedWeek}
+                onClick={() => setSelectedWeek(week)}
+              />
+            );
+          })
+        }
+      </ClientOnly>
     </div>
   );
 }
