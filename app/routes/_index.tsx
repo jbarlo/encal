@@ -134,7 +134,7 @@ const Week: FC<WeekProps> = ({
 );
 
 const numWeeks = 8;
-export default function Index() {
+const Calendar: FC = () => {
   const events: Event[] = [
     { startTime: moment().startOf("day").subtract(0.5, "hours"), length: 1 },
     { startTime: moment().startOf("day").add(2, "hours"), length: 1 },
@@ -168,23 +168,26 @@ export default function Index() {
   );
 
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+
+  return (
+    <div>
+      {map(range(numWeeks), (week) => (
+        <Week
+          key={week}
+          weekStartDate={moment().startOf("week").add(week, "weeks")}
+          events={flattenedEvents}
+          focused={week === selectedWeek}
+          onClick={() => setSelectedWeek(week)}
+        />
+      ))}
+    </div>
+  );
+};
+
+export default function Index() {
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
-      <ClientOnly>
-        {() =>
-          map(range(numWeeks), (week) => {
-            return (
-              <Week
-                key={week}
-                weekStartDate={moment().startOf("week").add(week, "weeks")}
-                events={flattenedEvents}
-                focused={week === selectedWeek}
-                onClick={() => setSelectedWeek(week)}
-              />
-            );
-          })
-        }
-      </ClientOnly>
+      <ClientOnly>{() => <Calendar />}</ClientOnly>
     </div>
   );
 }
