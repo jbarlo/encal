@@ -18,10 +18,7 @@ import type { Moment } from "moment";
 import { ClientOnly } from "remix-utils";
 
 export const meta: V2_MetaFunction = () => {
-  return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
-  ];
+  return [{ title: "Lil Cal" }];
 };
 
 interface HourProps {
