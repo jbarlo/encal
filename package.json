@@ -5,6 +5,8 @@
     "build": "remix build",
     "dev": "remix dev",
     "start": "remix-serve build",
+    "build-static": "wget -r -nH -i static-urls.txt -P static",
+    "serve-static": "serve static",
     "typecheck": "tsc"
   },
   "dependencies": {
@@ -25,6 +27,7 @@
     "@types/react": "^18.0.35",
     "@types/react-dom": "^18.0.11",
     "eslint": "^8.38.0",
+    "serve": "^14.2.0",
     "typescript": "^5.0.4"
   },
   "engines": {
