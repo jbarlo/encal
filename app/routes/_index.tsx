@@ -13,9 +13,14 @@ import {
 } from "lodash";
 import type { CSSProperties, FC } from "react";
 import { useState } from "react";
-import moment from "moment";
-import type { Moment } from "moment";
+import dayjs from "dayjs";
+import type { Dayjs } from "dayjs";
 import { ClientOnly } from "remix-utils";
+import isBetween from "dayjs/plugin/isBetween";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+
+dayjs.extend(isBetween);
+dayjs.extend(isSameOrBefore);
 
 export const meta: V2_MetaFunction = () => {
   return [{ title: "Lil Cal" }];
@@ -35,22 +40,22 @@ const Hour: FC<HourProps> = ({ hour, hourHeight }: HourProps) => (
       backgroundColor: hour >= 22 || hour < 8 ? "#0004" : "#0000",
     }}
   >
-    {moment().startOf("day").add(hour, "hours").format("HH:mm")}
+    {dayjs().startOf("day").add(hour, "hours").format("HH:mm")}
   </div>
 );
 
-type Event = { startTime: Moment; length: number };
+type Event = { startTime: Dayjs; length: number };
 const getEventEndTime = (event: Event) =>
-  moment(event.startTime).add(event.length, "hours");
+  dayjs(event.startTime).add(event.length, "hours");
 
 interface DayProps {
-  date: Moment;
+  date: Dayjs;
   detailed: boolean;
   events: Event[];
 }
 const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
-  const day = moment(date).startOf("day");
-  const dayIsOver = day.isBefore(moment().startOf("day"));
+  const day = dayjs(date).startOf("day");
+  const dayIsOver = day.isBefore(dayjs().startOf("day"));
 
   const eventsAsHours = compact(
     map(events, (ev) =>
@@ -107,7 +112,7 @@ const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
 };
 
 interface WeekProps {
-  weekStartDate: Moment;
+  weekStartDate: Dayjs;
   focused: boolean;
   events: Event[];
   onClick?: () => any;
@@ -121,8 +126,8 @@ const Week: FC<WeekProps> = ({
   <div style={{ display: "flex", gap: 4 }} onClick={() => onClick?.()}>
     {map(range(7), (d) => (
       <Day
-        key={`${moment(weekStartDate).toISOString()}-${d}`}
-        date={moment(weekStartDate).add(d, "days")}
+        key={`${dayjs(weekStartDate).toISOString()}-${d}`}
+        date={dayjs(weekStartDate).add(d, "days")}
         detailed={focused}
         events={events}
       />
@@ -133,14 +138,14 @@ const Week: FC<WeekProps> = ({
 const numWeeks = 8;
 const Calendar: FC = () => {
   const events: Event[] = [
-    { startTime: moment().startOf("day").subtract(0.5, "hours"), length: 1 },
-    { startTime: moment().startOf("day").add(2, "hours"), length: 1 },
-    { startTime: moment().startOf("day").add(0, "hours"), length: 1.5 },
+    { startTime: dayjs().startOf("day").subtract(0.5, "hours"), length: 1 },
+    { startTime: dayjs().startOf("day").add(2, "hours"), length: 1 },
+    { startTime: dayjs().startOf("day").add(0, "hours"), length: 1.5 },
   ];
 
   const flattenedEvents: Event[] = [];
   forEach(
-    sortBy(events, (ev) => +moment(ev.startTime)),
+    sortBy(events, (ev) => +dayjs(ev.startTime)),
     (ev) => {
       const lastFlattened = last(flattenedEvents);
       if (isNil(lastFlattened)) {
@@ -171,7 +176,7 @@ const Calendar: FC = () => {
       {map(range(numWeeks), (week) => (
         <Week
           key={week}
-          weekStartDate={moment().startOf("week").add(week, "weeks")}
+          weekStartDate={dayjs().startOf("week").add(week, "weeks")}
           events={flattenedEvents}
           focused={week === selectedWeek}
           onClick={() => setSelectedWeek(week)}
