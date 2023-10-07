@@ -39,9 +39,9 @@ export interface BatteryProps {
 }
 const Battery: FC<BatteryProps> = ({ energy }: BatteryProps) => (
   <div
+    className="aspect-21/10"
     style={{
-      height: 100,
-      width: 210,
+      width: 100,
       boxSizing: "border-box",
       padding: 5,
       justifyContent: "end",

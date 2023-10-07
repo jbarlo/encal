@@ -18,6 +18,7 @@ import type { Dayjs } from "dayjs";
 import { ClientOnly } from "remix-utils";
 import isBetween from "dayjs/plugin/isBetween";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import Battery from "~/components/battery";
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrBefore);
@@ -26,9 +27,27 @@ export const meta: V2_MetaFunction = () => {
   return [{ title: "Lil Cal" }];
 };
 
+const energy = 0.8;
+
 const retiringHour = 22;
 const startingHour = 6;
 const readyHour = 8;
+
+const exhaustionRate = 0.1;
+const eventExhaustionRateMultiplier = 1.2;
+// TODO realistically the multiplier follows some sigmoid
+
+// returns a value between 0 and 1 representing the probability of being willing to do something at that hour.
+// 0 is never, 1 is always. the value reduces linearly at a rate proportional to the energy level.
+// for each hour during an event, the rate is multiplied by the eventExhaustionRateMultiplier
+const availabilityFunction = (
+  energy: number,
+  events: Event[],
+  hourSinceReady: number,
+): number => {
+  // TODO events exhaustion
+  return min([energy - hourSinceReady * exhaustionRate, 0]) ?? 0;
+};
 
 interface HourProps {
   hour: number;
@@ -181,7 +200,12 @@ const Week: FC<WeekProps> = ({
 );
 
 const numWeeks = 8;
-const Calendar: FC = () => {
+
+interface CalendarProps {
+  energy: number;
+}
+
+const Calendar: FC<CalendarProps> = ({ energy }) => {
   const events: Event[] = [
     { startTime: dayjs().startOf("day").subtract(0.5, "hours"), length: 1 },
     { startTime: dayjs().startOf("day").add(2, "hours"), length: 1 },
@@ -232,13 +256,20 @@ const Calendar: FC = () => {
   );
 };
 
+const View = () => (
+  <main>
+    <Battery energy={energy} />
+    <Calendar energy={energy} />
+  </main>
+);
+
 export default function Index() {
   return (
     <div
       className="p-2"
       style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
     >
-      <ClientOnly>{() => <Calendar />}</ClientOnly>
+      <ClientOnly>{() => <View />}</ClientOnly>
     </div>
   );
 }
