@@ -64,18 +64,18 @@ const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
             start: ev.startTime.diff(day, "hour", true),
             end: getEventEndTime(ev).diff(day, "hour", true),
           }
-        : null
-    )
+        : null,
+    ),
   );
 
   return (
     <div
+      className="aspect-square"
       style={{
         borderWidth: "1px",
         borderStyle: "groove",
         borderColor: "black",
-        height: detailed ? undefined : 100,
-        width: "calc(100vw / 7)",
+        flex: 1,
         backgroundColor: dayIsOver ? "gray" : "red",
         boxSizing: "border-box",
       }}
@@ -101,9 +101,7 @@ const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
                 width: "calc(100vw / 14)",
                 opacity: 0.5,
               }}
-            >
-              {ev.end - ev.start}
-            </div>
+            />
           ))}
         </div>
       )}
@@ -123,7 +121,7 @@ const Week: FC<WeekProps> = ({
   events,
   onClick,
 }: WeekProps) => (
-  <div style={{ display: "flex", gap: 4 }} onClick={() => onClick?.()}>
+  <div style={{ display: "flex" }} onClick={() => onClick?.()}>
     {map(range(7), (d) => (
       <Day
         key={`${dayjs(weekStartDate).toISOString()}-${d}`}
@@ -158,7 +156,7 @@ const Calendar: FC = () => {
           lastFlattened.length = getEventEndTime(ev).diff(
             lastFlattened.startTime,
             "hours",
-            true
+            true,
           );
           return true; // continue
         }
@@ -166,13 +164,13 @@ const Calendar: FC = () => {
         flattenedEvents.push(ev);
         return true; //continue
       }
-    }
+    },
   );
 
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
   return (
-    <div>
+    <div className="w-10/12">
       {map(range(numWeeks), (week) => (
         <Week
           key={week}
@@ -188,7 +186,10 @@ const Calendar: FC = () => {
 
 export default function Index() {
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
+    <div
+      className="p-2"
+      style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
+    >
       <ClientOnly>{() => <Calendar />}</ClientOnly>
     </div>
   );
