@@ -11,7 +11,7 @@ import {
   range,
   sortBy,
 } from "lodash";
-import type { CSSProperties, FC } from "react";
+import type { FC } from "react";
 import { useState } from "react";
 import dayjs from "dayjs";
 import type { Dayjs } from "dayjs";
@@ -26,22 +26,24 @@ export const meta: V2_MetaFunction = () => {
   return [{ title: "Lil Cal" }];
 };
 
+const retiringHour = 22;
+const startingHour = 6;
+const readyHour = 8;
+
 interface HourProps {
   hour: number;
-  hourHeight?: CSSProperties["height"];
 }
-const Hour: FC<HourProps> = ({ hour, hourHeight }: HourProps) => (
+const Hour: FC<HourProps> = ({ hour }: HourProps) => (
   <div
+    className="h-5"
     style={{
       color: "#555",
-      height: hourHeight,
       borderTop: "solid #666 1px",
       boxSizing: "border-box",
-      backgroundColor: hour >= 22 || hour < 8 ? "#0004" : "#0000",
+      backgroundColor:
+        hour >= retiringHour || hour < readyHour ? "#0004" : "#0000",
     }}
-  >
-    {dayjs().startOf("day").add(hour, "hours").format("HH:mm")}
-  </div>
+  />
 );
 
 type Event = { startTime: Dayjs; length: number };
@@ -55,11 +57,24 @@ interface DayProps {
 }
 const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
   const day = dayjs(date).startOf("day");
-  const dayIsOver = day.isBefore(dayjs().startOf("day"));
+
+  const dayAtStartingHour = day.add(startingHour, "hours");
+  const nextDayStartingHour = dayAtStartingHour.add(1, "day");
 
   const eventsAsHours = compact(
     map(events, (ev) =>
-      day.isBetween(ev.startTime, getEventEndTime(ev), "days", "[]")
+      ev.startTime.isBetween(
+        dayAtStartingHour,
+        nextDayStartingHour,
+        undefined,
+        "[]",
+      ) ||
+      getEventEndTime(ev).isBetween(
+        dayAtStartingHour,
+        nextDayStartingHour,
+        undefined,
+        "[]",
+      )
         ? {
             start: ev.startTime.diff(day, "hour", true),
             end: getEventEndTime(ev).diff(day, "hour", true),
@@ -67,7 +82,6 @@ const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
         : null,
     ),
   );
-
   return (
     <div
       className="aspect-square"
@@ -76,29 +90,32 @@ const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
         borderStyle: "groove",
         borderColor: "black",
         flex: 1,
-        backgroundColor: dayIsOver ? "gray" : "red",
+        backgroundColor: "red",
         boxSizing: "border-box",
       }}
     >
-      {day.date() === 1 ? day.format("MMM D") : day.date()}
+      <div className="h-8">
+        {day.date() === 1 ? day.format("MMM D") : day.date()}
+      </div>
       {detailed && (
         <div style={{ position: "relative" }}>
           {map(range(24), (hour) => (
-            <Hour hour={hour} hourHeight="3em" />
+            <Hour hour={(startingHour + hour) % 24} />
           ))}
 
           {map(eventsAsHours, (ev) => (
             <div
+              className="w-4 rounded-full"
               style={{
                 overflow: "hidden",
                 backgroundColor: "pink",
-                height: `calc(3em * ${
-                  (min([ev.end, 24]) ?? 0) - (max([ev.start, 0]) ?? 0)
+                height: `calc(20px * ${
+                  (min([ev.end, 24 + startingHour]) ?? 0) -
+                  (max([ev.start, startingHour]) ?? 0)
                 })`,
                 position: "absolute",
                 right: 0,
-                top: `calc(3em * ${clamp(ev.start, 0, 24)})`,
-                width: "calc(100vw / 14)",
+                top: `calc(20px * ${clamp(ev.start - startingHour, 0, 24)})`,
                 opacity: 0.5,
               }}
             />
@@ -122,6 +139,23 @@ const Week: FC<WeekProps> = ({
   onClick,
 }: WeekProps) => (
   <div style={{ display: "flex" }} onClick={() => onClick?.()}>
+    <div className="w-6 bg-slate-500 text-right text-xs">
+      {focused && (
+        <>
+          <div className="h-8" />
+          {range(24).map((hour) => {
+            const moddedHour = (startingHour + hour) % 24;
+            const isNextDay = startingHour + hour >= 24;
+            return (
+              <div key={moddedHour} className="h-5 text-slate-200">
+                {isNextDay ? "+" : ""}
+                {dayjs().startOf("day").add(moddedHour, "hours").format("HH")}
+              </div>
+            );
+          })}
+        </>
+      )}
+    </div>
     {map(range(7), (d) => (
       <Day
         key={`${dayjs(weekStartDate).toISOString()}-${d}`}
@@ -139,6 +173,7 @@ const Calendar: FC = () => {
     { startTime: dayjs().startOf("day").subtract(0.5, "hours"), length: 1 },
     { startTime: dayjs().startOf("day").add(2, "hours"), length: 1 },
     { startTime: dayjs().startOf("day").add(0, "hours"), length: 1.5 },
+    { startTime: dayjs().startOf("day").add(5, "hours"), length: 4 },
   ];
 
   const flattenedEvents: Event[] = [];
