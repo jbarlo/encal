@@ -32,19 +32,23 @@ const readyHour = 8;
 
 interface HourProps {
   hour: number;
+  isPast?: boolean;
 }
-const Hour: FC<HourProps> = ({ hour }: HourProps) => (
-  <div
-    className="h-5"
-    style={{
-      color: "#555",
-      borderTop: "solid #666 1px",
-      boxSizing: "border-box",
-      backgroundColor:
-        hour >= retiringHour || hour < readyHour ? "#0004" : "#0000",
-    }}
-  />
-);
+const Hour: FC<HourProps> = ({ hour, isPast }: HourProps) => {
+  const nonPastColour =
+    hour >= retiringHour || hour < readyHour ? "#0004" : "#0000";
+  return (
+    <div
+      className="h-5"
+      style={{
+        color: "#555",
+        borderTop: "solid #666 1px",
+        boxSizing: "border-box",
+        backgroundColor: isPast ? "gray" : nonPastColour,
+      }}
+    />
+  );
+};
 
 type Event = { startTime: Dayjs; length: number };
 const getEventEndTime = (event: Event) =>
@@ -90,7 +94,11 @@ const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
         borderStyle: "groove",
         borderColor: "black",
         flex: 1,
-        backgroundColor: "red",
+        backgroundColor: dayAtStartingHour.isBefore(
+          dayjs().startOf("day").add(startingHour, "hours"),
+        )
+          ? "gray"
+          : "red",
         boxSizing: "border-box",
       }}
     >
@@ -100,12 +108,17 @@ const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
       {detailed && (
         <div style={{ position: "relative" }}>
           {map(range(24), (hour) => (
-            <Hour hour={(startingHour + hour) % 24} />
+            <Hour
+              hour={(startingHour + hour) % 24}
+              isPast={dayAtStartingHour
+                .add(hour, "hours")
+                .isBefore(dayjs().startOf("hour"))}
+            />
           ))}
 
           {map(eventsAsHours, (ev) => (
             <div
-              className="w-4 rounded-full"
+              className="w-3 rounded-full"
               style={{
                 overflow: "hidden",
                 backgroundColor: "pink",
