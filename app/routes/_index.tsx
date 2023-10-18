@@ -9,6 +9,7 @@ import {
   max,
   min,
   range,
+  some,
   sortBy,
 } from "lodash";
 import type { FC } from "react";
@@ -27,7 +28,7 @@ export const meta: V2_MetaFunction = () => {
   return [{ title: "Lil Cal" }];
 };
 
-const colours = { past: "#555", default: "#2f59a7" };
+const colours = { past: "#555", default: "#2f59a7", busy: "#444" };
 
 const energy = 0.99;
 
@@ -55,6 +56,7 @@ const HourDiv = styled.div<{
   availability: number;
   isPast: boolean;
   isRetired: boolean;
+  isBusy: boolean;
 }>`
   @keyframes availability-progress {
     0% {
@@ -77,6 +79,7 @@ const HourDiv = styled.div<{
     ${(props) => {
       if (props.isPast) return `background-color: ${colours.past};`;
       if (props.isRetired) return "background-color: #0004;";
+      if (props.isBusy) return `background-color: ${colours.busy};`;
       return `animation: 100s linear calc(-1s * ${props.availability * 100})
     paused availability-progress;`;
     }};
@@ -86,13 +89,15 @@ const HourDiv = styled.div<{
 interface HourProps {
   hour: number;
   isPast?: boolean;
+  isBusy?: boolean;
 }
-const Hour: FC<HourProps> = ({ hour, isPast }: HourProps) => {
+const Hour: FC<HourProps> = ({ hour, isPast, isBusy }: HourProps) => {
   const displayHour = (startingHour + hour) % 24;
   return (
     <HourDiv
       isPast={isPast ?? false}
       isRetired={displayHour >= retiringHour || displayHour < readyHour}
+      isBusy={isBusy ?? false}
       availability={availabilityFunction(
         energy,
         [],
@@ -180,6 +185,12 @@ const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
           {map(range(24), (hour) => (
             <Hour
               hour={hour}
+              isBusy={some(
+                clampedEventsAsHours,
+                (ev) =>
+                  hour + startingHour >= ev.start &&
+                  hour + startingHour <= ev.end,
+              )}
               isPast={dayAtStartingHour
                 .add(hour, "hours")
                 .isBefore(dayjs().startOf("hour"))}
