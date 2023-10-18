@@ -139,6 +139,23 @@ const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
         : null,
     ),
   );
+
+  const now = dayjs();
+  const preciseNowHour = now.diff(day, "hour", true);
+  const impreciseNowHour = now.diff(day, "hour");
+
+  const clampedEventsAsHours = now.startOf("day").isAfter(day)
+    ? []
+    : compact(
+        map(eventsAsHours, (ev) => {
+          if (preciseNowHour > ev.end) return null;
+          return {
+            start: impreciseNowHour > ev.start ? impreciseNowHour : ev.start,
+            end: ev.end,
+          };
+        }),
+      );
+
   return (
     <div
       className="aspect-square"
@@ -169,7 +186,7 @@ const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
             />
           ))}
 
-          {map(eventsAsHours, (ev) => (
+          {map(clampedEventsAsHours, (ev) => (
             <div
               className="w-3 rounded-full"
               style={{
@@ -239,12 +256,28 @@ interface CalendarProps {
   energy: number;
 }
 
+const temp = 20;
 const Calendar: FC<CalendarProps> = ({ energy }) => {
   const events: Event[] = [
-    { startTime: dayjs().startOf("day").subtract(0.5, "hours"), length: 1 },
-    { startTime: dayjs().startOf("day").add(2, "hours"), length: 1 },
-    { startTime: dayjs().startOf("day").add(0, "hours"), length: 1.5 },
-    { startTime: dayjs().startOf("day").add(5, "hours"), length: 4 },
+    {
+      startTime: dayjs()
+        .startOf("day")
+        .add(temp, "hour")
+        .subtract(0.5, "hours"),
+      length: 1,
+    },
+    {
+      startTime: dayjs().startOf("day").add(temp, "hour").add(2, "hours"),
+      length: 1,
+    },
+    {
+      startTime: dayjs().startOf("day").add(temp, "hour").add(0, "hours"),
+      length: 1.5,
+    },
+    {
+      startTime: dayjs().startOf("day").add(temp, "hour").add(5, "hours"),
+      length: 4,
+    },
   ];
 
   const flattenedEvents: Event[] = [];
