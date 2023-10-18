@@ -18,7 +18,7 @@ import type { Dayjs } from "dayjs";
 import { ClientOnly } from "remix-utils";
 import isBetween from "dayjs/plugin/isBetween";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import Battery from "~/components/battery";
+import { styled } from "styled-components";
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrBefore);
@@ -27,13 +27,15 @@ export const meta: V2_MetaFunction = () => {
   return [{ title: "Lil Cal" }];
 };
 
-const energy = 0.8;
+const colours = { past: "#555", default: "#2f59a7" };
 
-const retiringHour = 22;
+const energy = 0.99;
+
 const startingHour = 6;
+const retiringHour = 22;
 const readyHour = 8;
 
-const exhaustionRate = 0.1;
+const exhaustionRate = 1 / 24;
 const eventExhaustionRateMultiplier = 1.2;
 // TODO realistically the multiplier follows some sigmoid
 
@@ -46,25 +48,57 @@ const availabilityFunction = (
   hourSinceReady: number,
 ): number => {
   // TODO events exhaustion
-  return min([energy - hourSinceReady * exhaustionRate, 0]) ?? 0;
+  return max([energy - hourSinceReady * exhaustionRate, 0]) ?? 0;
 };
+
+const HourDiv = styled.div<{
+  availability: number;
+  isPast: boolean;
+  isRetired: boolean;
+}>`
+  @keyframes availability-progress {
+    0% {
+      background-color: #6c4242;
+    }
+
+    50% {
+      background-color: #9f8340;
+    }
+
+    100% {
+      background-color: #53dd53;
+    }
+  }
+
+  && {
+    border-top: solid #666 1px;
+    box-sizing: border-box;
+
+    ${(props) => {
+      if (props.isPast) return `background-color: ${colours.past};`;
+      if (props.isRetired) return "background-color: #0004;";
+      return `animation: 100s linear calc(-1s * ${props.availability * 100})
+    paused availability-progress;`;
+    }};
+  }
+`;
 
 interface HourProps {
   hour: number;
   isPast?: boolean;
 }
 const Hour: FC<HourProps> = ({ hour, isPast }: HourProps) => {
-  const nonPastColour =
-    hour >= retiringHour || hour < readyHour ? "#0004" : "#0000";
+  const displayHour = (startingHour + hour) % 24;
   return (
-    <div
+    <HourDiv
+      isPast={isPast ?? false}
+      isRetired={displayHour >= retiringHour || displayHour < readyHour}
+      availability={availabilityFunction(
+        energy,
+        [],
+        startingHour + hour - readyHour,
+      )}
       className="h-5"
-      style={{
-        color: "#555",
-        borderTop: "solid #666 1px",
-        boxSizing: "border-box",
-        backgroundColor: isPast ? "gray" : nonPastColour,
-      }}
     />
   );
 };
@@ -116,8 +150,8 @@ const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
         backgroundColor: dayAtStartingHour.isBefore(
           dayjs().startOf("day").add(startingHour, "hours"),
         )
-          ? "gray"
-          : "red",
+          ? colours.past
+          : colours.default,
         boxSizing: "border-box",
       }}
     >
@@ -128,7 +162,7 @@ const Day: FC<DayProps> = ({ date, detailed, events }: DayProps) => {
         <div style={{ position: "relative" }}>
           {map(range(24), (hour) => (
             <Hour
-              hour={(startingHour + hour) % 24}
+              hour={hour}
               isPast={dayAtStartingHour
                 .add(hour, "hours")
                 .isBefore(dayjs().startOf("hour"))}
@@ -258,7 +292,7 @@ const Calendar: FC<CalendarProps> = ({ energy }) => {
 
 const View = () => (
   <main>
-    <Battery energy={energy} />
+    {/* <Battery energy={energy} /> */}
     <Calendar energy={energy} />
   </main>
 );
